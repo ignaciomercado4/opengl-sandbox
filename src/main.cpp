@@ -22,8 +22,8 @@
 #include "Shader.hpp"
 
 // DEC&DEF
-const int SCREEN_WIDTH = 1440;
-const int SCREEN_HEIGHT = 810;
+const int SCREEN_WIDTH = 1920;
+const int SCREEN_HEIGHT = 1080;
 
 void processInput(GLFWwindow *window);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
@@ -82,9 +82,9 @@ int main()
     // TRIANGLE WORLD SPACE POSITIONS
     std::vector<glm::vec3> trianglePositions;
     
-    for (int i = 0; i <= 10; i++) {
-        for (int j = 0; j <= 10; j++) {
-            for (int k = -10; k <= 10; k++) {
+    for (int i = 0; i <= 50; i++) { // Z
+        for (int j = 0; j <= 10; j++) { // Y
+            for (int k = -10; k <= 10; k++) { // X
                 trianglePositions.push_back(glm::vec3((float)k * 1.5f, (float)j * 1.5f, (float)i * 1.5f));
             }
         }
@@ -179,15 +179,17 @@ int main()
 
 void processInput(GLFWwindow *window)
 {
+    const float cameraSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 0.2f : 0.05f; // if L-shift is pressed you go super fast
+
     // MISC
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    { 
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
         glfwSetWindowShouldClose(window, true);
-    }
+    // TP to 0,0,0
+    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+        cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    
 
     // MOVEMENT
-    const float cameraSpeed = 0.05f;
-
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -196,9 +198,7 @@ void processInput(GLFWwindow *window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    // TP TO 0,0,0
-    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-        cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    
 
     cameraPos.y = 0.0f; // AVOID FLYING
 }
