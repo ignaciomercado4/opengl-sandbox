@@ -189,6 +189,8 @@ void processInput(GLFWwindow *window)
     // TP TO 0,0,0
     if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
         cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    cameraPos.y = 0.0f; // AVOID FLYING
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
