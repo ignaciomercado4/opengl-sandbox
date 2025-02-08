@@ -10,19 +10,20 @@
           ░  ░  ░   ░  ░    ░         ░  ░      ░       ░  ░           ░  ░           ░       ░
                                  ░
 */
-
+#define GLM_ENABLE_EXPERIMENTAL
 #include <iostream>
 #include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
+#include "gtx/string_cast.hpp"
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "Shader.hpp"
 
 // DEC&DEF
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+const int SCREEN_WIDTH = 1440;
+const int SCREEN_HEIGHT = 810;
 
 void processInput(GLFWwindow *window);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
@@ -79,10 +80,20 @@ int main()
         0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
 
     // TRIANGLE WORLD SPACE POSITIONS
-    std::vector<glm::vec3> trianglePositions = {
-        glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::vec3(1.5f, 0.0f, 0.0f),
-        glm::vec3(-1.5f, 0.0f, 0.0f)};
+    std::vector<glm::vec3> trianglePositions;
+    
+    for (int i = 0; i <= 10; i++) {
+        for (int j = 0; j <= 10; j++) {
+            for (int k = -10; k <= 10; k++) {
+                trianglePositions.push_back(glm::vec3((float)k * 1.5f, (float)j * 1.5f, (float)i * 1.5f));
+            }
+        }
+    }
+    
+
+   for (int i = 0; i < trianglePositions.size(); i++) {
+        std::cout << glm::to_string(trianglePositions.at(i)) << std::endl;
+   }
 
     /*VAO AND VBO THING STEPS*/
     // 1. gen VAO and VBO
@@ -126,7 +137,7 @@ int main()
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
         glm::mat4 projection;
-        projection = glm::perspective(glm::radians(45.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
+        projection = glm::perspective(glm::radians(50.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
 
         int modelLoc = glGetUniformLocation(ourShader.ID, "model");
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -142,7 +153,6 @@ int main()
         {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, trianglePositions[i]);
-            model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             ourShader.setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 3);
