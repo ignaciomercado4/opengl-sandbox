@@ -25,8 +25,86 @@
 const int SCREEN_WIDTH = 1920;
 const int SCREEN_HEIGHT = 1080;
 
+namespace GL {
+    GLFWwindow* _window;
+
+    void Init(int height, int width, std::string title) 
+    {
+        if (!glfwInit())
+        {
+            std::cout << "Error initializing GLFW" << std::endl;
+            return;
+        }
+
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        GLFWwindow *_window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+        if (!_window)
+        {
+            std::cout << "Error creating GLFW window" << std::endl;
+            glfwTerminate();
+            return;
+        }
+
+        glfwMakeContextCurrent(_window);
+        glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
+
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        {
+            std::cout << "Error initializing GLAD" << std::endl;
+            return;
+        }
+    }
+
+    GLFWwindow* GetWindowPointer() 
+    {
+        return _window;
+    }
+
+    bool IsWindowOpen() 
+    {
+        return !glfwWindowShouldClose(_window);
+    }
+
+    void SetWindowShouldClose(bool value)
+    {
+        glfwSetWindowShouldClose(_window, value);
+    }
+
+    void SwapBuffersPollEvents() 
+    {
+        glfwSwapBuffers(_window);
+        glfwPollEvents();
+    }
+
+    void CleanUp()
+    {
+        glfwTerminate();
+    }
+}
+
+namespace Utils {
+    std::string ReadTextFromFile(std::string path)
+    {
+        std::ifstream file(path);
+        std::string str;
+        std::string line;
+        
+        while (std::getline(file, line)) 
+        {
+            str += line + '\n';
+        }
+
+        return str;
+    }
+}
+
+
 void processInput(GLFWwindow *window);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
+void printCurrentCoordinates();
 
 glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -91,9 +169,6 @@ int main()
     }
     
 
-   for (int i = 0; i < trianglePositions.size(); i++) {
-        std::cout << glm::to_string(trianglePositions.at(i)) << std::endl;
-   }
 
     /*VAO AND VBO THING STEPS*/
     // 1. gen VAO and VBO
@@ -158,14 +233,7 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 3);
         }
 
-        std::cout << "Camera Position: (" 
-          << cameraPos.x << ", " 
-          << cameraPos.y << ", " 
-          << cameraPos.z << ") | Looking At: (" 
-          << cameraFront.x << ", " 
-          << cameraFront.y << ", " 
-          << cameraFront.z << ")" << std::endl;
-
+        printCurrentCoordinates();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -235,3 +303,14 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
 }  
+
+void printCurrentCoordinates() {
+    std::cout << "Camera Position: (" 
+          << cameraPos.x << ", " 
+          << cameraPos.y << ", " 
+          << cameraPos.z << ") | Looking At: (" 
+          << cameraFront.x << ", " 
+          << cameraFront.y << ", " 
+          << cameraFront.z << ")" << std::endl;
+}
+
