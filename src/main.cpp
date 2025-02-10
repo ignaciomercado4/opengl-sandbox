@@ -11,6 +11,7 @@
                                  ░
 */
 #define GLM_ENABLE_EXPERIMENTAL
+
 #include <iostream>
 #include <vector>
 #include <glad/glad.h>
@@ -21,92 +22,19 @@
 #include <gtc/type_ptr.hpp>
 #include "Shader.hpp"
 
+
 // DEC&DEF
-const int SCREEN_WIDTH = 1920;
-const int SCREEN_HEIGHT = 1080;
-
-namespace GL {
-    GLFWwindow* _window;
-
-    void Init(int height, int width, std::string title) 
-    {
-        if (!glfwInit())
-        {
-            std::cout << "Error initializing GLFW" << std::endl;
-            return;
-        }
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        GLFWwindow *_window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-        if (!_window)
-        {
-            std::cout << "Error creating GLFW window" << std::endl;
-            glfwTerminate();
-            return;
-        }
-
-        glfwMakeContextCurrent(_window);
-        glfwSetInputMode(_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        {
-            std::cout << "Error initializing GLAD" << std::endl;
-            return;
-        }
-    }
-
-    GLFWwindow* GetWindowPointer() 
-    {
-        return _window;
-    }
-
-    bool IsWindowOpen() 
-    {
-        return !glfwWindowShouldClose(_window);
-    }
-
-    void SetWindowShouldClose(bool value)
-    {
-        glfwSetWindowShouldClose(_window, value);
-    }
-
-    void SwapBuffersPollEvents() 
-    {
-        glfwSwapBuffers(_window);
-        glfwPollEvents();
-    }
-
-    void CleanUp()
-    {
-        glfwTerminate();
-    }
-}
-
-namespace Utils {
-    std::string ReadTextFromFile(std::string path)
-    {
-        std::ifstream file(path);
-        std::string str;
-        std::string line;
-        
-        while (std::getline(file, line)) 
-        {
-            str += line + '\n';
-        }
-
-        return str;
-    }
-}
-
+const int SCREEN_WIDTH = 800;
+const int SCREEN_HEIGHT = 600;
+const int CHUNK_WIDTH = 16; 
+const int CHUNK_HEIGHT = 16; 
+const int CHUNK_LENGTH = 16; 
 
 void processInput(GLFWwindow *window);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void printCurrentCoordinates();
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -152,23 +80,58 @@ int main()
 
     // LOCAL SPACE VERT COORDS
     float vertices[] = {
-        // coord                // color
-        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f};
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
+        
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
 
-    // TRIANGLE WORLD SPACE POSITIONS
-    std::vector<glm::vec3> trianglePositions;
-    
-    for (int i = 0; i <= 50; i++) { // Z
-        for (int j = 0; j <= 10; j++) { // Y
-            for (int k = -10; k <= 10; k++) { // X
-                trianglePositions.push_back(glm::vec3((float)k * 1.5f, (float)j * 1.5f, (float)i * 1.5f));
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f
+    };
+
+    std::vector<glm::vec3> cubePositions;
+
+    for (int i = 0; i <= CHUNK_WIDTH; i++) { // Z
+        for (int j = 0; j <= CHUNK_HEIGHT; j++) { // Y
+            for (int k = 0; k <= CHUNK_LENGTH; k++) { // X
+                cubePositions.push_back(glm::vec3((float)k * 1.0f, (float)j * 1.0f, (float)i * 1.0f));
             }
         }
     }
-    
-
 
     /*VAO AND VBO THING STEPS*/
     // 1. gen VAO and VBO
@@ -206,7 +169,7 @@ int main()
 
         // GOING 3D
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
 
         glm::mat4 view;
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
@@ -224,13 +187,15 @@ int main()
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO);
-        for (unsigned int i = 0; i < trianglePositions.size(); i++)
+        
+        for (unsigned int i = 0; i < cubePositions.size(); i++)
         {
+            // calculate the model matrix for each object and pass it to shader before drawing
             glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, trianglePositions[i]);
+            model = glm::translate(model, cubePositions[i]);
             ourShader.setMat4("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 3);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
         printCurrentCoordinates();
@@ -268,7 +233,7 @@ void processInput(GLFWwindow *window)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     
 
-    cameraPos.y = 0.0f; // AVOID FLYING
+    // cameraPos.y = 0.0f; // AVOID FLYING
 }
 
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
