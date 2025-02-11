@@ -17,33 +17,34 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
+#include <stb_perlin.h>
 #include "gtx/string_cast.hpp"
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "Shader.hpp"
 
-
 // DEC&DEF
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
-const int CHUNK_WIDTH = 16; 
-const int CHUNK_HEIGHT = 16; 
-const int CHUNK_LENGTH = 16; 
+const int CHUNK_WIDTH = 64;
+const int CHUNK_LENGTH = 64;
+const int CHUNK_HEIGHT = 2;
 
 void processInput(GLFWwindow *window);
 void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 void printCurrentCoordinates();
+std::vector<std::vector<int>> generatePerlinNoiseArray(int width, int height, float scale);
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 5.0f, 10.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f, 0.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
 bool firstMouse = true;
-float yaw   = -90.0f;
-float fov   =  45.0f;
-float pitch =  0.0f;
-float lastX =  (float)SCREEN_WIDTH / 2.0;
-float lastY =  (float)SCREEN_HEIGHT / 2.0;
+float yaw = -90.0f;
+float fov = 45.0f;
+float pitch = 0.0f;
+float lastX = (float)SCREEN_WIDTH / 2.0;
+float lastY = (float)SCREEN_HEIGHT / 2.0;
 
 int main()
 {
@@ -66,8 +67,8 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); 
-    glfwSetCursorPosCallback(window, mouseCallback); 
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetCursorPosCallback(window, mouseCallback);
 
     // GLAD
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -80,121 +81,120 @@ int main()
 
     // LOCAL SPACE VERT COORDS
     float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f, 1.0f,
-        
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
 
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 1.0f
-    };
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
 
+        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f};
+
+    // PERLIN NOISE TERRAIN HEIGHT GENERATION
+    std::vector<std::vector<int>> perlinNoise = generatePerlinNoiseArray(CHUNK_WIDTH, CHUNK_LENGTH, 0.1f);
     std::vector<glm::vec3> cubePositions;
 
-    for (int i = 0; i <= CHUNK_WIDTH; i++) { // Z
-        for (int j = 0; j <= CHUNK_HEIGHT; j++) { // Y
-            for (int k = 0; k <= CHUNK_LENGTH; k++) { // X
-                cubePositions.push_back(glm::vec3((float)k * 1.0f, (float)j * 1.0f, (float)i * 1.0f));
+    for (int i = 0; i < CHUNK_WIDTH; i++)
+    {
+        for (int k = 0; k < CHUNK_LENGTH; k++)
+        {
+            if (i < perlinNoise.size() && k < perlinNoise[i].size())
+            {
+                int heightValue = perlinNoise[i][k];
+                for(int y = 0; y <= heightValue; y++) {
+                    cubePositions.push_back(glm::vec3(
+                        static_cast<float>(k),  
+                        static_cast<float>(y),   
+                        static_cast<float>(i)   
+                    ));
+                }
             }
         }
     }
 
-    /*VAO AND VBO THING STEPS*/
-    // 1. gen VAO and VBO
+    // VAO and VBO thing setup
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
-    // 2. bind VAO and VBO
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    // 3. configure and enable 'em
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    // position
+    
+    // Position vert attribute
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
-    // color
+    
+    // Color vert attribute
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
-    /*-----------------------------------------------------------------------------------*/
 
     Shader ourShader("src/shaders/vertexShader.vert", "src/shaders/fragmentShader.frag");
     ourShader.use();
 
-    // MAIN LOOP
+    glEnable(GL_DEPTH_TEST);
+
+    // MEIN LU
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
 
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
-        glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         ourShader.use();
 
-        // GOING 3D
+        // Create transformation matrices
         glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 
+            static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT), 0.1f, 100.0f);
 
-        glm::mat4 view;
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        // Set uniforms
+        ourShader.setMat4("view", view);
+        ourShader.setMat4("projection", projection);
 
-        glm::mat4 projection;
-        projection = glm::perspective(glm::radians(50.0f), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
-
-        int modelLoc = glGetUniformLocation(ourShader.ID, "model");
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-        int viewLoc = glGetUniformLocation(ourShader.ID, "view");
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-        int projectionLoc = glGetUniformLocation(ourShader.ID, "projection");
-        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
+        // Render terrain cubes
         glBindVertexArray(VAO);
-        
-        for (unsigned int i = 0; i < cubePositions.size(); i++)
+        for (const auto& position : cubePositions)
         {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[i]);
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, position);
             ourShader.setMat4("model", model);
-
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
@@ -204,6 +204,7 @@ int main()
         glfwPollEvents();
     }
 
+    // Cleanup
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glfwTerminate();
@@ -212,17 +213,14 @@ int main()
 
 void processInput(GLFWwindow *window)
 {
-    const float cameraSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 0.2f : 0.05f; // if L-shift is pressed you go super fast
+    const float cameraSpeed = (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) ? 0.2f : 0.05f;
 
-    // MISC
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) 
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-    // TP to 0,0,0
-    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
-        cameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
-    
 
-    // MOVEMENT
+    if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
+        cameraPos = glm::vec3(0.0f, 5.0f, 10.0f);
+
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -231,12 +229,9 @@ void processInput(GLFWwindow *window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    
-
-    // cameraPos.y = 0.0f; // AVOID FLYING
 }
 
-void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+void mouseCallback(GLFWwindow *window, double xpos, double ypos)
 {
     if (firstMouse)
     {
@@ -244,9 +239,9 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
         lastY = ypos;
         firstMouse = false;
     }
-  
+
     float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; 
+    float yoffset = lastY - ypos;
     lastX = xpos;
     lastY = ypos;
 
@@ -254,28 +249,46 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    yaw   += xoffset;
+    yaw += xoffset;
     pitch += yoffset;
 
-    if(pitch > 89.0f)
-        pitch = 89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
+    pitch = std::max(-89.0f, std::min(89.0f, pitch));
 
     glm::vec3 direction;
     direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction.y = sin(glm::radians(pitch));
     direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
-}  
-
-void printCurrentCoordinates() {
-    std::cout << "Camera Position: (" 
-          << cameraPos.x << ", " 
-          << cameraPos.y << ", " 
-          << cameraPos.z << ") | Looking At: (" 
-          << cameraFront.x << ", " 
-          << cameraFront.y << ", " 
-          << cameraFront.z << ")" << std::endl;
 }
 
+void printCurrentCoordinates()
+{
+    std::cout << "Camera Position: ("
+              << cameraPos.x << ", "
+              << cameraPos.y << ", "
+              << cameraPos.z << ") | Looking At: ("
+              << cameraFront.x << ", "
+              << cameraFront.y << ", "
+              << cameraFront.z << ")" << std::endl;
+}
+
+std::vector<std::vector<int>> generatePerlinNoiseArray(int width, int height, float scale)
+{
+    std::vector<std::vector<int>> noiseArray(height, std::vector<int>(width));
+
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            float noiseValue = stb_perlin_noise3(x * scale, y * scale, 0.0f, 0, 0, 0);
+            
+            int mappedValue = CHUNK_HEIGHT + static_cast<int>(round((noiseValue + 1) * 4.5f));
+            
+            mappedValue = std::max(CHUNK_HEIGHT, mappedValue);
+            
+            noiseArray[y][x] = mappedValue;
+        }
+    }
+
+    return noiseArray;
+}
