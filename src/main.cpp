@@ -14,6 +14,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
@@ -41,6 +42,13 @@ float lastX = (float)SCREEN_WIDTH / 2.0;
 float lastY = (float)SCREEN_HEIGHT / 2.0;
 
 bool drawWireframe = false;
+
+struct Vec3Hasher {
+    size_t operator()(const glm::vec3& v) const {
+        return std::hash<float>()(v.x) ^ std::hash<float>()(v.y) ^ std::hash<float>()(v.z);
+    }
+};
+
 
 namespace GL
 {
@@ -150,6 +158,16 @@ namespace Utils
 
         return noiseArray;
     }
+
+    void printVoxelAmount(std::vector<glm::vec3> positions)
+    {
+        std::cout << "Voxels: " << positions.size() << std::endl;
+    }
+
+    void printVertAmount(std::vector<glm::vec3> positions)
+    {
+        std::cout << "Vertices: " << positions.size() * 36 << std::endl;
+    }
 }
 
 namespace Input
@@ -162,7 +180,6 @@ namespace Input
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-
         // TP TO 0,0,0
         if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS)
             cameraPos = glm::vec3(0.0f, 5.0f, 10.0f);
@@ -171,6 +188,7 @@ namespace Input
         if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
             drawWireframe = !drawWireframe;
 
+        // MOVEMENT
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
             cameraPos += cameraSpeed * cameraFront;
         if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -180,6 +198,26 @@ namespace Input
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     }
+}
+
+namespace Render {
+    bool IsCubeVisible(glm::vec3 cubePosition, const std::unordered_set<glm::vec3, Vec3Hasher> &cubePositions) 
+{
+    std::vector<glm::vec3> neighbors = {
+        glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0),
+        glm::vec3(0, 1, 0), glm::vec3(0, -1, 0),
+        glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)
+    };
+
+    for (const auto& offset : neighbors) {
+        if (cubePositions.find(cubePosition + offset) == cubePositions.end()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 }
 
@@ -189,7 +227,7 @@ int main()
     GLFWwindow *window = GL::GetWindowPointer();
     if (!window)
     {
-        return -1;
+        return 0;
     }
 
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -258,6 +296,14 @@ int main()
         }
     }
 
+    for (int i = 0; i < cubePositions.size(); i++) 
+    {
+        Render::IsCubeVisible(cubePositions[i], cubePositions);
+    }
+
+    Utils::printVoxelAmount(cubePositions);
+    Utils::printVertAmount(cubePositions);
+
     // VAO and VBO thing setup
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
@@ -283,14 +329,15 @@ int main()
 
     while (GL::IsWindowOpen())
     {
-        Utils::printCurrentCoordinates();
         Input::processInput(window);
 
-        if (drawWireframe) 
+        if (drawWireframe)
         {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-        } else {
-            glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        }
+        else
+        {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         }
 
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
@@ -312,13 +359,14 @@ int main()
         glBindVertexArray(VAO);
         for (const auto &position : cubePositions)
         {
-            model = glm::mat4(1.0f);
-            model = glm::translate(model, position);
-            ourShader.setMat4("model", model);
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            if (Render::IsCubeVisible(position, cubePositions)) 
+            {
+                model = glm::mat4(1.0f);
+                model = glm::translate(model, position);
+                ourShader.setMat4("model", model);
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         }
-
-        Utils::printCurrentCoordinates();
 
         GL::SwapBuffersPollEvents();
     }
