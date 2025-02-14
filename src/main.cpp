@@ -15,6 +15,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <unordered_set>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
@@ -42,13 +43,6 @@ float lastX = (float)SCREEN_WIDTH / 2.0;
 float lastY = (float)SCREEN_HEIGHT / 2.0;
 
 bool drawWireframe = false;
-
-struct Vec3Hasher {
-    size_t operator()(const glm::vec3& v) const {
-        return std::hash<float>()(v.x) ^ std::hash<float>()(v.y) ^ std::hash<float>()(v.z);
-    }
-};
-
 
 namespace GL
 {
@@ -201,24 +195,31 @@ namespace Input
 }
 
 namespace Render {
-    bool IsCubeVisible(glm::vec3 cubePosition, const std::unordered_set<glm::vec3, Vec3Hasher> &cubePositions) 
-{
-    std::vector<glm::vec3> neighbors = {
-        glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0),
-        glm::vec3(0, 1, 0), glm::vec3(0, -1, 0),
-        glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)
+    struct Vec3Hasher {
+        size_t operator()(const glm::vec3& v) const {
+            return std::hash<float>()(v.x) ^ 
+                   (std::hash<float>()(v.y) << 1) ^ 
+                   (std::hash<float>()(v.z) << 2);
+        }
     };
 
-    for (const auto& offset : neighbors) {
-        if (cubePositions.find(cubePosition + offset) == cubePositions.end()) {
-            return true;
+    bool IsCubeVisible(const glm::vec3& cubePosition, 
+                      const std::unordered_set<glm::vec3, Vec3Hasher>& cubePositions) {
+        const std::vector<glm::vec3> neighbors = {
+            glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0),
+            glm::vec3(0, 1, 0), glm::vec3(0, -1, 0),
+            glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)
+        };
+
+        for (const auto& offset : neighbors) {
+            glm::vec3 neighborPos = cubePosition + offset;
+            if (cubePositions.find(neighborPos) == cubePositions.end()) {
+                return true;
+            }
         }
+
+        return false;
     }
-
-    return false;
-}
-
-
 }
 
 int main()
@@ -296,15 +297,16 @@ int main()
         }
     }
 
+    std::unordered_set<glm::vec3, Render::Vec3Hasher> cubePositionsSet(cubePositions.begin(), cubePositions.end());
+
     for (int i = 0; i < cubePositions.size(); i++) 
     {
-        Render::IsCubeVisible(cubePositions[i], cubePositions);
+        Render::IsCubeVisible(cubePositions[i], cubePositionsSet);
     }
 
     Utils::printVoxelAmount(cubePositions);
     Utils::printVertAmount(cubePositions);
 
-    // VAO and VBO thing setup
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -355,11 +357,12 @@ int main()
         ourShader.setMat4("view", view);
         ourShader.setMat4("projection", projection);
 
-        // Render terrain cubes
+        // Render cubes
         glBindVertexArray(VAO);
+
         for (const auto &position : cubePositions)
         {
-            if (Render::IsCubeVisible(position, cubePositions)) 
+            if (Render::IsCubeVisible(position, cubePositionsSet)) 
             {
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, position);
