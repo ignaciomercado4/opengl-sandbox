@@ -24,12 +24,13 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "Shader.hpp"
+#include <stb_image.h>
 
 const int SCREEN_WIDTH = 1980;
 const int SCREEN_HEIGHT = 1080;
-const int CHUNK_WIDTH = 10;
-const int CHUNK_LENGTH = 10;
-const int CHUNK_HEIGHT = 2;
+const int CHUNK_WIDTH = 32;
+const int CHUNK_LENGTH = 32;
+const int CHUNK_HEIGHT = 10;
 
 glm::vec3 cameraPos = glm::vec3(0.0f, 5.0f, 10.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -194,26 +195,31 @@ namespace Input
     }
 }
 
-namespace Render {
-    struct Vec3Hasher {
-        size_t operator()(const glm::vec3& v) const {
-            return std::hash<float>()(v.x) ^ 
-                   (std::hash<float>()(v.y) << 1) ^ 
+namespace Render
+{
+    struct Vec3Hasher
+    {
+        size_t operator()(const glm::vec3 &v) const
+        {
+            return std::hash<float>()(v.x) ^
+                   (std::hash<float>()(v.y) << 1) ^
                    (std::hash<float>()(v.z) << 2);
         }
     };
 
-    bool IsCubeVisible(const glm::vec3& cubePosition, 
-                      const std::unordered_set<glm::vec3, Vec3Hasher>& cubePositions) {
+    bool IsCubeVisible(const glm::vec3 &cubePosition,
+                       const std::unordered_set<glm::vec3, Vec3Hasher> &cubePositions)
+    {
         const std::vector<glm::vec3> neighbors = {
             glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0),
             glm::vec3(0, 1, 0), glm::vec3(0, -1, 0),
-            glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)
-        };
+            glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)};
 
-        for (const auto& offset : neighbors) {
+        for (const auto &offset : neighbors)
+        {
             glm::vec3 neighborPos = cubePosition + offset;
-            if (cubePositions.find(neighborPos) == cubePositions.end()) {
+            if (cubePositions.find(neighborPos) == cubePositions.end())
+            {
                 return true;
             }
         }
@@ -233,48 +239,50 @@ int main()
 
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    float vertices[] = {
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+        float vertices[] = {
+        // Positions          // Texture Coords
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
 
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
 
-    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    -0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
 
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
 
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
 
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f,
-    0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,
-    -0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-    -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 1.0f};
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f
+    };
 
     std::vector<std::vector<int>> perlinNoise = Utils::generatePerlinNoiseArray(CHUNK_WIDTH, CHUNK_LENGTH, 0.1f);
     std::vector<glm::vec3> cubePositions;
@@ -299,7 +307,7 @@ int main()
 
     std::unordered_set<glm::vec3, Render::Vec3Hasher> cubePositionsSet(cubePositions.begin(), cubePositions.end());
 
-    for (int i = 0; i < cubePositions.size(); i++) 
+    for (int i = 0; i < cubePositions.size(); i++)
     {
         Render::IsCubeVisible(cubePositions[i], cubePositionsSet);
     }
@@ -316,16 +324,40 @@ int main()
 
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Position vert attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
 
-    // Color vert attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
+    // Texture coordinate attribute
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load("src/resources/dirt.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 
     Shader ourShader("src/shaders/vertexShader.vert", "src/shaders/fragmentShader.frag");
     ourShader.use();
+    glBindTexture(GL_TEXTURE_2D, texture);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -345,6 +377,8 @@ int main()
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glBindTexture(GL_TEXTURE_2D, texture);
+
         ourShader.use();
 
         // Create transformation matrices
@@ -362,7 +396,7 @@ int main()
 
         for (const auto &position : cubePositions)
         {
-            if (Render::IsCubeVisible(position, cubePositionsSet)) 
+            if (Render::IsCubeVisible(position, cubePositionsSet))
             {
                 model = glm::mat4(1.0f);
                 model = glm::translate(model, position);
