@@ -45,6 +45,10 @@ float lastY = (float)SCREEN_HEIGHT / 2.0;
 
 bool drawWireframe = false;
 
+glm::vec3 lightPos = glm::vec3(0.0f, 22.0f, 0.0f);
+glm::vec3 lightColor = glm::vec3(1.0f, 1.0f, 1.0f);
+glm::vec3 voxelColor = glm::vec3(0.34f, 0.22f, 0.15f);
+
 namespace GL
 {
     GLFWwindow *_window;
@@ -107,6 +111,8 @@ namespace GL
             std::cerr << "Error initializing GLAD" << std::endl;
             return;
         }
+        
+        glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
 
     GLFWwindow *GetWindowPointer() { return _window; }
@@ -226,6 +232,33 @@ namespace Render
 
         return false;
     }
+
+    std::vector<glm::vec3> calculateSmoothedNormals(const std::vector<glm::vec3>& positions, const std::unordered_set<glm::vec3, Vec3Hasher>& positionsSet) 
+    {
+        std::vector<glm::vec3> normals(positions.size(), glm::vec3(0.0f));
+
+        for (size_t i = 0; i < positions.size(); ++i) {
+            const glm::vec3& pos = positions[i];
+            glm::vec3 normal(0.0f);
+
+            const std::vector<glm::vec3> neighbors = {
+                glm::vec3(1, 0, 0), glm::vec3(-1, 0, 0),
+                glm::vec3(0, 1, 0), glm::vec3(0, -1, 0),
+                glm::vec3(0, 0, 1), glm::vec3(0, 0, -1)
+            };
+
+            for (const auto& offset : neighbors) {
+                glm::vec3 neighborPos = pos + offset;
+                if (positionsSet.find(neighborPos) == positionsSet.end()) {
+                    normal += offset;
+                }
+            }
+
+            normals[i] = glm::normalize(normal);
+        }
+
+        return normals;
+    }
 }
 
 int main()
@@ -237,51 +270,49 @@ int main()
         return 0;
     }
 
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
         float vertices[] = {
-        // Positions          // Texture Coords
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 0.0f,
+        // Pos                  // Tex coord    // Normal 
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, 0.0f, -1.0f,
+        0.5f, -0.5f, -0.5f,     1.0f, 0.0f,     0.0f, 0.0f, -1.0f,
+        0.5f,  0.5f, -0.5f,     1.0f, 1.0f,     0.0f, 0.0f, -1.0f,
+        0.5f,  0.5f, -0.5f,     1.0f, 1.0f,     0.0f, 0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 1.0f,     0.0f, 0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, 0.0f, -1.0f,
 
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f, 1.0f, 1.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,     0.0f, 0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,     1.0f, 0.0f,     0.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,     1.0f, 1.0f,     0.0f, 0.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,     1.0f, 1.0f,     0.0f, 0.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,     0.0f, 0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, 0.0f,     0.0f, 0.0f, 1.0f,
 
-        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,    1.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,    1.0f, 1.0f,     -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,    1.0f, 1.0f,     -1.0f, 0.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,     -1.0f, 0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 0.0f,     -1.0f, 0.0f, 0.0f,
 
-        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,     0.0f, 0.0f,     1.0f, 0.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,     1.0f, 0.0f,     1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     1.0f, 1.0f,     1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     1.0f, 1.0f,     1.0f, 0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,     0.0f, 1.0f,     1.0f, 0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,     0.0f, 0.0f,     1.0f, 0.0f, 0.0f,
 
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
-        0.5f, -0.5f,  0.5f, 1.0f, 0.0f,
-        -0.5f, -0.5f,  0.5f, 0.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,     1.0f, 0.0f,     0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,     1.0f, 1.0f,     0.0f, -1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,     1.0f, 1.0f,     0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,    0.0f, 1.0f,     0.0f, -1.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,    0.0f, 0.0f,     0.0f, -1.0f, 0.0f,
 
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f,
-        0.5f,  0.5f, -0.5f, 1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f, 1.0f, 0.0f,
-        -0.5f,  0.5f,  0.5f, 0.0f, 0.0f,
-        -0.5f,  0.5f, -0.5f, 0.0f, 1.0f
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f,     1.0f, 1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,     1.0f, 0.0f,     1.0f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,     1.0f, 1.0f,     0.0f, 1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,     1.0f, 1.0f,     0.0f, 1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,     0.0f, 1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,    0.0f, 0.0f,     1.0f, 1.0f, 0.0f
     };
 
     std::vector<std::vector<int>> perlinNoise = Utils::generatePerlinNoiseArray(CHUNK_WIDTH, CHUNK_LENGTH, 0.1f);
@@ -306,39 +337,43 @@ int main()
     }
 
     std::unordered_set<glm::vec3, Render::Vec3Hasher> cubePositionsSet(cubePositions.begin(), cubePositions.end());
+    std::vector<glm::vec3> smoothedNormals = Render::calculateSmoothedNormals(cubePositions, cubePositionsSet);
 
     for (int i = 0; i < cubePositions.size(); i++)
     {
         Render::IsCubeVisible(cubePositions[i], cubePositionsSet);
     }
 
-    Utils::printVoxelAmount(cubePositions);
-    Utils::printVertAmount(cubePositions);
-
     unsigned int VAO, VBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)0);
+    // Pos
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Texture coordinate attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void *)(3 * sizeof(float)));
+    // Tex coords
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    // Normals
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    unsigned int lightCubeVAO;
+    glGenVertexArrays(1, &lightCubeVAO);
+    glBindVertexArray(lightCubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
     unsigned int texture;
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
@@ -356,8 +391,8 @@ int main()
     stbi_image_free(data);
 
     Shader ourShader("src/shaders/vertexShader.vert", "src/shaders/fragmentShader.frag");
-    ourShader.use();
-    glBindTexture(GL_TEXTURE_2D, texture);
+    Shader lightShader("src/shaders/lightVertexShader.vert", "src/shaders/lightFragmentShader.frag");
+    
 
     glEnable(GL_DEPTH_TEST);
 
@@ -377,9 +412,12 @@ int main()
         glClearColor(0.1f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glBindTexture(GL_TEXTURE_2D, texture);
-
+        
         ourShader.use();
+        glBindTexture(GL_TEXTURE_2D, texture);
+        ourShader.setVec3("lightPos", lightPos);
+        ourShader.setVec3("viewPos", cameraPos);
+        ourShader.setVec3("lightColor", lightColor);
 
         // Create transformation matrices
         glm::mat4 model = glm::mat4(1.0f);
@@ -393,7 +431,6 @@ int main()
 
         // Render cubes
         glBindVertexArray(VAO);
-
         for (const auto &position : cubePositions)
         {
             if (Render::IsCubeVisible(position, cubePositionsSet))
@@ -404,6 +441,17 @@ int main()
                 glDrawArrays(GL_TRIANGLES, 0, 36);
             }
         }
+
+        // Render light
+        lightShader.use();
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightPos);
+        model = glm::scale(model, glm::vec3(0.2f));
+        lightShader.setMat4("projection", projection);
+        lightShader.setMat4("view", view);
+        lightShader.setMat4("model", model);
+        glBindVertexArray(lightCubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         GL::SwapBuffersPollEvents();
     }
