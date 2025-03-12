@@ -12,6 +12,7 @@ namespace GL {
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         _window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
         if (!_window) {
@@ -26,6 +27,8 @@ namespace GL {
             glfwTerminate();
             return;
         }
+
+        glViewport(0, 0, width, height);
     }
 
     GLFWwindow* GetWindowPointer() {
