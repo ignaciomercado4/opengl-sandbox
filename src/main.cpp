@@ -2,21 +2,22 @@
 #include <GLFW/glfw3.h>
 #include "GL.h"
 #include "Shader.h"
+#include "Input.h"
 
 const int WINDOW_WIDTH = 1280;
 const int WINDOW_HEIGHT = 720;
 
 float vertices[] = {
     // aPos             // aColor
-    -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f,
-    0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f,
-    0.0f,  0.5f, 0.0f, 1.0f, 1.0f, 1.0f
-};
+    -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
+    0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 0.0f,
+    0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f};
 
-int main() {
+int main()
+{
     GL::Init(WINDOW_WIDTH, WINDOW_HEIGHT, "Rewrite");
-    GLFWwindow* window = GL::GetWindowPointer();
-    
+    GLFWwindow *window = GL::GetWindowPointer();
+
     Shader OurShader("src/shaders/vertexShader.vert", "src/shaders/fragmentShader.frag");
 
     unsigned int VBO, VAO;
@@ -28,15 +29,17 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
     glEnableVertexAttribArray(0);
     // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    while (GL::GetWindowShouldClose()) {
+    while (GL::GetWindowShouldClose())
+    {
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT); 
+        glClear(GL_COLOR_BUFFER_BIT);
+        Input::ProcessKeyboardInputs(window);
         OurShader.use();
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);

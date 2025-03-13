@@ -1,11 +1,14 @@
 #include "GL.h"
 #include <iostream>
 
-namespace GL {
-    GLFWwindow* _window = nullptr;
+namespace GL
+{
+    GLFWwindow *_window = nullptr;
 
-    void Init(int width, int height, std::string title) {
-        if (!glfwInit()) {
+    void Init(int width, int height, std::string title)
+    {
+        if (!glfwInit())
+        {
             std::cerr << "Failed to init GLFW" << std::endl;
             return;
         }
@@ -15,14 +18,16 @@ namespace GL {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         _window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-        if (!_window) {
+        if (!_window)
+        {
             std::cerr << "Failed to create window" << std::endl;
             glfwTerminate();
             return;
         }
 
         glfwMakeContextCurrent(_window);
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+        {
             std::cerr << "Failed to init GLAD" << std::endl;
             glfwTerminate();
             return;
@@ -31,24 +36,29 @@ namespace GL {
         glViewport(0, 0, width, height);
     }
 
-    GLFWwindow* GetWindowPointer() {
+    GLFWwindow *GetWindowPointer()
+    {
         return _window;
     }
 
-    bool GetWindowShouldClose() {
+    bool GetWindowShouldClose()
+    {
         return !glfwWindowShouldClose(_window);
     }
 
-    void SetWindowShouldClose(bool val) {
+    void SetWindowShouldClose(bool val)
+    {
         glfwSetWindowShouldClose(_window, val);
     }
 
-    void SwapBuffersPollEvents() {
+    void SwapBuffersPollEvents()
+    {
         glfwSwapBuffers(_window);
         glfwPollEvents();
     }
 
-    void Cleanup() {
+    void Cleanup()
+    {
         glfwTerminate();
     }
 }
