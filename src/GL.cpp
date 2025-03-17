@@ -34,6 +34,8 @@ namespace GL
         }
 
         glViewport(0, 0, width, height);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
     }
 
     GLFWwindow *GetWindowPointer()
