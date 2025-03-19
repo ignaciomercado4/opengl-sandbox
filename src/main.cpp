@@ -91,10 +91,13 @@ int main()
     glEnableVertexAttribArray(2);
 
     unsigned int containerTexture = Texture::loadTexture("src/resources/box.png");
-    unsigned int containerTextureSpecular = Texture::loadTexture("src/resources/box_specular_test.png");
+    unsigned int containerTextureEmission = Texture::loadTexture("src/resources/box_emission.png");
+    unsigned int containerTextureSpecular = Texture::loadTexture("src/resources/box_specular.png");
+    
     lightingShader.use();
     lightingShader.setInt("material.diffuse", 0);
-    lightingShader.setInt("material.specular", 1);
+    lightingShader.setInt("material.emission", 1);
+    lightingShader.setInt("material.specular", 2);
 
     while (GL::GetWindowShouldClose())
     {
@@ -109,6 +112,7 @@ int main()
         Input::ProcessKeyboardInputs(window, camera, deltaTime);
 
         lightingShader.use();
+        lightingShader.setFloat("time", glfwGetTime());
         lightingShader.setVec3("viewPos", camera.Position);
         lightingShader.setFloat("material.shininess", 32.0f);
         // directional light
@@ -146,10 +150,14 @@ int main()
         
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, containerTexture);
-
+        
         glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, containerTextureEmission);
+
+        glActiveTexture(GL_TEXTURE2);
         Texture::setGrayscaleTextureSwizzle(containerTextureSpecular);
         glBindTexture(GL_TEXTURE_2D, containerTextureSpecular);
+        
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
