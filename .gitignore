@@ -5,7 +5,7 @@
 *.dll
 *.lib
 *.a
-
+*.txt
 test
 *.exe
 
@@ -22,6 +22,7 @@ Thumbs.db
 .idea/
 *.code-workspace
 .vscode/
+src/resources/models
 
 *~
 *.swp
@@ -30,6 +31,7 @@ Thumbs.db
 
 vendor/
 !vendor/glad/  # Excepción para mantener el código de Glad si está en 'vendor'
+
 
 CMakeFiles/
 CMakeCache.txt

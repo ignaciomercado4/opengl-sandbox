@@ -65,12 +65,12 @@ void main()
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 result = CalcDirLight(dirLight, norm, viewDir);
     result += CalcPointLight(pointLight, norm, FragPos, viewDir);    
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);    
+    result += CalcSpotLight(spotLight, norm, FragPos, viewDir);
+    // vec3 emission = texture(material.emission, TextureCoordinate).rgb;
+    // emission = emission * (sin(time * 4.0f) * 0.5 + 0.5) * 2.0;
+    // result += emission;
     
-    vec3 emission = texture(material.emission, TextureCoordinate).rgb;
-    emission = emission * (sin(time * 4.0f) * 0.5 + 0.5) * 2.0;
-
-    FragColor = vec4(result + emission, 1.0);
+    FragColor = vec4(result, 1.0);
 }
 
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)

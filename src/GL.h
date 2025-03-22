@@ -6,12 +6,12 @@
 #include <iostream>
 
 namespace GL {
-    void Init(int width, int height, std::string title);
-    GLFWwindow* GetWindowPointer();
-    bool GetWindowShouldClose();
-    void SetWindowShouldClose(bool val);
-    void SwapBuffersPollEvents();
-    void Cleanup();
+    void init(int width, int height, std::string title);
+    GLFWwindow* getWindowPointer();
+    bool getWindowShouldClose();
+    void setWindowShouldClose(bool val);
+    void swapBuffersPollEvents();
+    void cleanup();
 }
 
 #endif // GL_H

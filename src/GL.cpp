@@ -5,7 +5,7 @@ namespace GL
 {
     GLFWwindow *_window = nullptr;
 
-    void Init(int width, int height, std::string title)
+    void init(int width, int height, std::string title)
     {
         if (!glfwInit())
         {
@@ -38,28 +38,28 @@ namespace GL
         glDepthFunc(GL_LESS);
     }
 
-    GLFWwindow *GetWindowPointer()
+    GLFWwindow *getWindowPointer()
     {
         return _window;
     }
 
-    bool GetWindowShouldClose()
+    bool getWindowShouldClose()
     {
         return !glfwWindowShouldClose(_window);
     }
 
-    void SetWindowShouldClose(bool val)
+    void setWindowShouldClose(bool val)
     {
         glfwSetWindowShouldClose(_window, val);
     }
 
-    void SwapBuffersPollEvents()
+    void swapBuffersPollEvents()
     {
         glfwSwapBuffers(_window);
         glfwPollEvents();
     }
 
-    void Cleanup()
+    void cleanup()
     {
         glfwTerminate();
     }

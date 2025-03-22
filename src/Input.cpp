@@ -7,7 +7,7 @@ namespace Input
     {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         {
-            GL::SetWindowShouldClose(true);
+            GL::setWindowShouldClose(true);
         }
 
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -18,6 +18,8 @@ namespace Input
             camera.ProcessKeyboard(LEFT, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             camera.ProcessKeyboard(RIGHT, deltaTime);
+
+        camera.Position.y = 0.0f;
     }
 
     
