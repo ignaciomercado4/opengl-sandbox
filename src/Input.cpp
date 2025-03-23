@@ -18,8 +18,6 @@ namespace Input
             camera.ProcessKeyboard(LEFT, deltaTime);
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
             camera.ProcessKeyboard(RIGHT, deltaTime);
-
-        camera.Position.y = 0.0f;
     }
 
     

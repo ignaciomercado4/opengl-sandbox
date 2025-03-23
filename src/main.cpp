@@ -7,8 +7,8 @@
 #include "Camera.h"
 #include "Model.h"
 
-const int SCREEN_WIDTH = 1280;
-const int SCREEN_HEIGHT = 720;
+const int SCREEN_WIDTH = 1920;
+const int SCREEN_HEIGHT =1080;
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float lastX = SCREEN_WIDTH / 2.0f;
@@ -28,8 +28,7 @@ int main()
 
     Shader lightingShader("src/shaders/lightingVertexShader.vert", "src/shaders/lightingFragmentShader.frag");
 
-    Model greggModel("src/resources/models/Gregg The Grim Reaper/Gregg.obj");
-    Model cotaggeModel("src/resources/models/Cottage/Snow covered CottageOBJ.obj");
+    Model batwingModel("src/resources/models/B-AO_X360_VEHICLE_Batwing_Arkham_Origins/B-AO_X360_VEHICLE_Batwing_Arkham_Origins.obj");
 
     while (GL::getWindowShouldClose())
     {
@@ -38,25 +37,25 @@ int main()
         lastFrame = currentFrame;
 
         glEnable(GL_DEPTH_TEST);
-        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+        glClearColor(0.5f, 0.5f, 1.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Input::ProcessKeyboardInputs(window, camera, deltaTime);
 
         lightingShader.use();
-        lightingShader.setFloat("time", glfwGetTime());
         lightingShader.setVec3("viewPos", camera.Position);
         lightingShader.setFloat("material.shininess", 32.0f);
         // directional light
         lightingShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
-        lightingShader.setVec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
-        lightingShader.setVec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+        lightingShader.setVec3("dirLight.ambient", 0.2f, 0.2f, 0.2f);  
+        lightingShader.setVec3("dirLight.diffuse", 0.8f, 0.8f, 0.8f);  
+        lightingShader.setVec3("dirLight.specular", 1.0f, 1.0f, 1.0f); 
+
         // point light 1
-        lightingShader.setVec3("pointLight.position", glm::vec3(2.0f));
-        lightingShader.setVec3("pointLight.ambient", 0.05f, 0.05f, 0.05f);
-        lightingShader.setVec3("pointLight.diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("pointLight.specular", 1.0f, 1.0f, 1.0f);
+        lightingShader.setVec3("pointLight.position", glm::vec3(5.0f));
+        lightingShader.setVec3("pointLight.ambient", 0.2f, 0.2f, 0.2f); 
+        lightingShader.setVec3("pointLight.diffuse", 1.0f, 1.0f, 1.0f); 
+        lightingShader.setVec3("pointLight.specular", 1.5f, 1.5f, 1.5f);
         lightingShader.setFloat("pointLight.constant", 1.0f);
         lightingShader.setFloat("pointLight.linear", 0.09f);
         lightingShader.setFloat("pointLight.quadratic", 0.032f);
@@ -76,13 +75,12 @@ int main()
         lightingShader.setMat4("u_Projection", projection);
         glm::mat4 view = camera.GetViewMatrix();
         lightingShader.setMat4("u_View", view);
-        glm::mat4 greggModelMatrix = glm::mat4(1.0f);
-        greggModelMatrix = glm::translate(greggModelMatrix, glm::vec3(0.0f));
-        greggModelMatrix = glm::scale(greggModelMatrix, glm::vec3(0.1f));
-        lightingShader.setMat4("u_Model", greggModelMatrix);
+        glm::mat4 batwingModelMatrix = glm::mat4(1.0f);
+        batwingModelMatrix = glm::translate(batwingModelMatrix, glm::vec3(0.0f));
+        batwingModelMatrix = glm::scale(batwingModelMatrix, glm::vec3(1.0f));
+        lightingShader.setMat4("u_Model", batwingModelMatrix);
         
-        // greggModel.Draw(lightingShader);
-        cotaggeModel.Draw(lightingShader);
+        batwingModel.Draw(lightingShader);
 
         GL::swapBuffersPollEvents();
     }
