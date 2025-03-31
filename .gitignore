@@ -22,7 +22,7 @@ Thumbs.db
 .idea/
 *.code-workspace
 .vscode/
-src/resources/models
+src/Resources/Models
 
 *~
 *.swp
