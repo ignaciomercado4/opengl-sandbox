@@ -9,9 +9,10 @@
 #include "Camera.h"
 #include "Model.h"
 #include "Utils.h"
+#include "Loader.h"
 
-const int SCREEN_WIDTH = 1080;
-const int SCREEN_HEIGHT = 720;
+const int SCREEN_WIDTH = 1920;
+const int SCREEN_HEIGHT = 1080;
 bool wireframe = false;
 
 Camera camera(glm::vec3(0.0f, 1.0f, 0.0f));
@@ -34,10 +35,11 @@ int main()
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    Shader lightingShader("src/shaders/lightingVertexShader.vert", "src/shaders/lightingFragmentShader.frag");
+    Shader lightingShader("src/Shaders/lightingVertexShader.vert", "src/Shaders/lightingFragmentShader.frag");
 
     Model batwingModel("src/Resources/Models/B-AO_X360_VEHICLE_Batwing_Arkham_Origins/B-AO_X360_VEHICLE_Batwing_Arkham_Origins.obj");
     Model floorTileModel("src/Resources/Models/Floor_Tile/Floor_Tile.obj");
+    Model cottageModel("src/Resources/Models/Cottage/Snow covered CottageOBJ.obj");
 
     for (int i = 0; i <= 16; i++)
     {
@@ -60,34 +62,18 @@ int main()
 
         Input::ProcessKeyboardInputs(window, camera, deltaTime);
 
-        lightingShader.use();
-        lightingShader.setVec3("u_ViewPos", camera.Position);
-        lightingShader.setFloat("u_Material.shininess", 32.0f);
-        // directional light
-        lightingShader.setVec3("u_DirLight.direction", -0.2f, -1.0f, -0.3f);
-        lightingShader.setVec3("u_DirLight.ambient", 0.2f, 0.2f, 0.2f);
-        lightingShader.setVec3("u_DirLight.diffuse", 0.8f, 0.8f, 0.8f);
-        lightingShader.setVec3("u_DirLight.specular", 1.0f, 1.0f, 1.0f);
+        Material material = {0, 0, 0, 32.0f};
+        DirLight dirLight = {glm::vec3(-0.2f, -1.0f, -0.3f),
+                             glm::vec3(0.2f), glm::vec3(0.8f), glm::vec3(1.0f)};
+        PointLight pointLight = {glm::vec3(5.0f),
+                                 1.0f, 0.09f, 0.032f,
+                                 glm::vec3(0.2f), glm::vec3(1.0f), glm::vec3(1.5f)};
+        SpotLight spotLight = {camera.Position, camera.Front,
+                               glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(15.0f)),
+                               1.0f, 0.09f, 0.032f,
+                               glm::vec3(0.0f), glm::vec3(1.0f), glm::vec3(1.0f)};
 
-        // point light 1
-        lightingShader.setVec3("u_PointLight.position", glm::vec3(5.0f));
-        lightingShader.setVec3("u_PointLight.ambient", 0.2f, 0.2f, 0.2f);
-        lightingShader.setVec3("u_PointLight.diffuse", 1.0f, 1.0f, 1.0f);
-        lightingShader.setVec3("u_PointLight.specular", 1.5f, 1.5f, 1.5f);
-        lightingShader.setFloat("u_PointLight.constant", 1.0f);
-        lightingShader.setFloat("u_PointLight.linear", 0.09f);
-        lightingShader.setFloat("u_PointLight.quadratic", 0.032f);
-        // spotLight
-        lightingShader.setVec3("u_SpotLight.position", camera.Position);
-        lightingShader.setVec3("u_SpotLight.direction", camera.Front);
-        lightingShader.setVec3("u_SpotLight.ambient", 0.0f, 0.0f, 0.0f);
-        lightingShader.setVec3("u_SpotLight.diffuse", 1.0f, 1.0f, 1.0f);
-        lightingShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
-        lightingShader.setFloat("u_SpotLight.constant", 1.0f);
-        lightingShader.setFloat("u_SpotLight.linear", 0.09f);
-        lightingShader.setFloat("u_SpotLight.quadratic", 0.032f);
-        lightingShader.setFloat("u_SpotLight.cutOff", glm::cos(glm::radians(12.5f)));
-        lightingShader.setFloat("u_SpotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+        Loader::loadShaderRenderData(lightingShader, material, dirLight, pointLight, spotLight, camera);
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT, 0.1f, 100.0f);
         lightingShader.setMat4("u_Projection", projection);
@@ -108,7 +94,13 @@ int main()
         batwingModelMatrix = glm::scale(batwingModelMatrix, glm::vec3(0.3f));
         lightingShader.setMat4("u_Model", batwingModelMatrix);
         batwingModel.Draw(lightingShader);
-        
+
+        glm::mat4 cottageModelMatrix = glm::mat4(1.0f);
+        cottageModelMatrix = glm::translate(cottageModelMatrix, glm::vec3(0.0f, 0.0f, -5.0f));
+        cottageModelMatrix = glm::scale(cottageModelMatrix, glm::vec3(0.1f));
+        lightingShader.setMat4("u_Model", cottageModelMatrix);
+        cottageModel.Draw(lightingShader);
+
         GL::swapBuffersPollEvents();
     }
 
